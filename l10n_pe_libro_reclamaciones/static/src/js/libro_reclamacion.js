@@ -9,9 +9,14 @@ publicWidget.registry.LibroReclamaciones = publicWidget.Widget.extend({
         'change select[name="consumer_state_id"]':'change_consumer_state',
         'change select[name="consumer_province_id"]':'change_consumer_province',
         'change input[name="consumer_type"]':'change_consumer_type',
-        'change input[name="consumer_younger"]':'change_consumer_younger'
+        'change input[name="consumer_younger"]':'change_consumer_younger',
+        'input input':'toggle_print_button',
+        'change select':'toggle_print_button',
+        'click #imprimir_reclamo':'print_claim'
     }),
     start: function () {
+        this.toggle_print_button();
+        return this._super.apply(this, arguments);
     },
     change_consumer_state: function(ev){
         var self = this
@@ -49,6 +54,7 @@ publicWidget.registry.LibroReclamaciones = publicWidget.Widget.extend({
             $(self.$el).find("#consumer_company_name").removeClass("d-none")
             $(self.$el).find("#consumer_company_document").removeClass("d-none")
         }
+        this.toggle_print_button();
     },
     change_consumer_younger:function(ev){
         var self = this;
@@ -60,6 +66,37 @@ publicWidget.registry.LibroReclamaciones = publicWidget.Widget.extend({
             $(self.$el).find("#consumer_younger_title").addClass("d-none")
             $(self.$el).find("#consumer_younger_content").addClass("d-none")
         }
+    },
+    toggle_print_button: function () {
+        const requiredFields = [
+            "consumer_name",
+            "consumer_lastname",
+            "consumer_email",
+            "consumer_document",
+            "consumer_phone",
+            "consumer_address",
+            "consumer_state_id",
+            "consumer_province_id",
+            "consumer_district_id",
+        ];
+        const isCompany = this.$el.find('input[name="consumer_type"]:checked').val() === "company";
+        const companyFields = ["consumer_company_name", "consumer_company_document"];
+        const fieldsToValidate = isCompany ? requiredFields.concat(companyFields) : requiredFields;
+
+        const isComplete = fieldsToValidate.every((fieldName) => {
+            const $field = this.$el.find(`[name="${fieldName}"]`);
+            if (!$field.length) {
+                return false;
+            }
+            return Boolean(String($field.val() || "").trim());
+        });
+
+        this.$el.find("#imprimir_reclamo")
+            .prop("disabled", !isComplete)
+            .toggleClass("btn-outline-secondary", !isComplete)
+            .toggleClass("btn-success", isComplete);
+    },
+    print_claim: function () {
+        window.print();
     }
 });
-
